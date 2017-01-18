@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Fabric;
 using System.Threading.Tasks;
+using System.Linq;
+using System.Threading;
 
 namespace TodolistStatefulService
 {
@@ -47,16 +49,39 @@ namespace TodolistStatefulService
             }
         }
 
-        public Task<IEnumerable<TodoItem>> GetTodoItems()
+        public async Task<IEnumerable<TodoItem>> GetTodoItems()
         {
-            var lijst =  new List<TodoItem>() { new TodoItem() { Id = 1, Titel = "Sjoerd een box geven omdat het werkt" } };
+            var myDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<int, TodoItem>>("TodoListItems");
+            using (var tx = this.StateManager.CreateTransaction())
+            {
+                var todoItems = new List<TodoItem>();
+                var enumerable = await myDictionary.CreateEnumerableAsync(tx);
+                var enumerator = enumerable.GetAsyncEnumerator();
 
-            return Task.FromResult<IEnumerable<TodoItem>>(lijst);
+                while (await enumerator.MoveNextAsync(CancellationToken.None))
+                {
+                    todoItems.Add(enumerator.Current.Value);
+                }
+
+                return todoItems;
+            }
         }
 
-        public Task Update(int id, TodoItem todoItem)
+        public async Task Update(int id, TodoItem todoItem)
         {
-            throw new NotImplementedException();
+            var myDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<int, TodoItem>>("TodoListItems");
+            using (var tx = this.StateManager.CreateTransaction())
+            {
+                if (await myDictionary.ContainsKeyAsync(tx, id))
+                {
+                    var oldTodoItem = await myDictionary.TryGetValueAsync(tx, id);
+                    await myDictionary.TryUpdateAsync(tx, id, todoItem, oldTodoItem.Value);
+                }
+
+                // If an exception is thrown before calling CommitAsync, the transaction aborts, all changes are
+                // discarded, and nothing is saved to the secondary replicas.
+                await tx.CommitAsync();
+            }
         }
 
         /// <summary>
