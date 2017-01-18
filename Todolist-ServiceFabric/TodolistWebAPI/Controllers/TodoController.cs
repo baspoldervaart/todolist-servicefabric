@@ -24,14 +24,24 @@ namespace TodolistWebAPI.Controllers
         }
 
         // GET api/todo/5
-        public TodoItem Get(int id)
+        public async Task<TodoItem> Get(int id)
         {
-            throw new NotImplementedException();
+            // Deze partitionkey laten staan, is nodig om het te laten werken.
+            var partition = new ServicePartitionKey(1); //provide the partitionKey for stateful services. for stateless services, you can just comment this out
+            ITodolistStatefulService todolistStatefulServiceClient = ServiceProxy.Create<ITodolistStatefulService>(new Uri("fabric:/Todolist_ServiceFabric/TodolistStatefulService"), partition);
+
+            var todoItems = await todolistStatefulServiceClient.GetTodoItem(id);
+            return todoItems;
         }
 
         // POST api/todo
-        public void Post([FromBody]TodoItem value)
+        public Task Post([FromBody]TodoItem value)
         {
+            // Deze partitionkey laten staan, is nodig om het te laten werken.
+            var partition = new ServicePartitionKey(1); //provide the partitionKey for stateful services. for stateless services, you can just comment this out
+            ITodolistStatefulService todolistStatefulServiceClient = ServiceProxy.Create<ITodolistStatefulService>(new Uri("fabric:/Todolist_ServiceFabric/TodolistStatefulService"), partition);
+
+            return todolistStatefulServiceClient.Create(value);
         }
 
         // PUT api/todo/5

@@ -1,4 +1,5 @@
-﻿using Microsoft.ServiceFabric.Services.Communication.Runtime;
+﻿using Microsoft.ServiceFabric.Data.Collections;
+using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Remoting.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
 using Shared.Models;
@@ -18,9 +19,17 @@ namespace TodolistStatefulService
             : base(context)
         { }
 
-        public Task Create(TodoItem todoItem)
+        public async Task Create(TodoItem todoItem)
         {
-            throw new NotImplementedException();
+            var myDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<int, TodoItem>>("TodoListItems");
+            using (var tx = this.StateManager.CreateTransaction())
+            {
+                await myDictionary.AddAsync(tx, todoItem.Id, todoItem);
+
+                // If an exception is thrown before calling CommitAsync, the transaction aborts, all changes are
+                // discarded, and nothing is saved to the secondary replicas.
+                await tx.CommitAsync();
+            }
         }
 
         public Task Delete(int id)
@@ -28,14 +37,21 @@ namespace TodolistStatefulService
             throw new NotImplementedException();
         }
 
-        public Task<TodoItem> GetTodoItem(int id)
+        public async Task<TodoItem> GetTodoItem(int id)
         {
-            throw new NotImplementedException();
+            var myDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<int, TodoItem>>("TodoListItems");
+            using (var tx = this.StateManager.CreateTransaction())
+            {
+                var item = await myDictionary.TryGetValueAsync(tx, id);
+                return item.Value;
+            }
         }
 
         public Task<IEnumerable<TodoItem>> GetTodoItems()
         {
-            throw new NotImplementedException();
+            var lijst =  new List<TodoItem>() { new TodoItem() { Id = 1, Titel = "Sjoerd een box geven omdat het werkt" } };
+
+            return Task.FromResult<IEnumerable<TodoItem>>(lijst);
         }
 
         public Task Update(int id, TodoItem todoItem)
