@@ -47,11 +47,21 @@ namespace TodolistWebAPI.Controllers
         // PUT api/todo/5
         public void Put(int id, [FromBody]TodoItem value)
         {
+            // Deze partitionkey laten staan, is nodig om het te laten werken.
+            var partition = new ServicePartitionKey(1); //provide the partitionKey for stateful services. for stateless services, you can just comment this out
+            ITodolistStatefulService todolistStatefulServiceClient = ServiceProxy.Create<ITodolistStatefulService>(new Uri("fabric:/Todolist_ServiceFabric/TodolistStatefulService"), partition);
+
+            todolistStatefulServiceClient.Update(id, value);
         }
 
         // DELETE api/todo/5
         public void Delete(int id)
         {
+            // Deze partitionkey laten staan, is nodig om het te laten werken.
+            var partition = new ServicePartitionKey(1); //provide the partitionKey for stateful services. for stateless services, you can just comment this out
+            ITodolistStatefulService todolistStatefulServiceClient = ServiceProxy.Create<ITodolistStatefulService>(new Uri("fabric:/Todolist_ServiceFabric/TodolistStatefulService"), partition);
+
+            todolistStatefulServiceClient.Delete(id);
         }
     }
 }
