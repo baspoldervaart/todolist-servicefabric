@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TodolistWebAPI.Models
+namespace Shared.Models
 {
     public class TodoItem
     {

@@ -29,6 +29,7 @@
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\TodolistStatefulService\TodolistStatefulService.csproj" />
     <ProjectReference Include="..\TodolistWebAPI\TodolistWebAPI.csproj" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
