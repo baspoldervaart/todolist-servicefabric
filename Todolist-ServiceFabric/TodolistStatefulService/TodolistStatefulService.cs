@@ -6,6 +6,7 @@ using Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.Fabric;
+using System.Fabric.Query;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -40,7 +41,7 @@ namespace TodolistStatefulService
 
         public async Task Delete(int id)
         {
-            var myDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<int, TodoItem>>("TodoListItems");
+            var myDictionary = await GetTodoListItemsDictionairy();
             using (var tx = this.StateManager.CreateTransaction())
             {
                 await myDictionary.TryRemoveAsync(tx, id);
