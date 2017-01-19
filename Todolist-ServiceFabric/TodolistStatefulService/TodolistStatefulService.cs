@@ -38,9 +38,13 @@ namespace TodolistStatefulService
             }
         }
 
-        public Task Delete(int id)
+        public async Task Delete(int id)
         {
-            throw new NotImplementedException();
+            var myDictionary = await this.StateManager.GetOrAddAsync<IReliableDictionary<int, TodoItem>>("TodoListItems");
+            using (var tx = this.StateManager.CreateTransaction())
+            {
+                await myDictionary.TryRemoveAsync(tx, id);
+            }
         }
 
         public async Task<TodoItem> GetTodoItem(int id)
