@@ -3,7 +3,6 @@ using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Remoting.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
 using Shared.Models;
-using System;
 using System.Collections.Generic;
 using System.Fabric;
 using System.Threading;
@@ -38,9 +37,17 @@ namespace TodolistStatefulService
             }
         }
 
-        public Task Delete(int id)
+        public async Task Delete(int id)
         {
-            throw new NotImplementedException();
+            var myDictionary = await GetTodoListItemsDictionairy();
+            using (var tx = this.StateManager.CreateTransaction())
+            {
+                await myDictionary.TryRemoveAsync(tx, id);
+
+                // If an exception is thrown before calling CommitAsync, the transaction aborts, all changes are
+                // discarded, and nothing is saved to the secondary replicas.
+                await tx.CommitAsync();
+            }
         }
 
         public async Task<TodoItem> GetTodoItem(int id)
